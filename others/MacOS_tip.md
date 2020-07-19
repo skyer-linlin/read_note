@@ -7,6 +7,29 @@
  * @FilePath: \note\java基础\泛型\spring\read note\others\MacOS_tip.md
 -->
 
+# Mac 键盘符号说明
+
+- ⌘ == Command
+- ⇧ == Shift
+- ⇪ == Caps Lock
+- ⌥ == Option
+- ⌃ == Control
+- ↩ == Return/Enter
+- ⌫ == Delete
+- ⌦ == 向前删除键（Fn+Delete）
+- ↑ == 上箭头
+- ↓ == 下箭头
+- ← == 左箭头
+- → == 右箭头
+- ⇞ == Page Up（Fn+↑）
+- ⇟ == Page Down（Fn+↓）
+- Home == Fn + ←
+- End == Fn + →
+- ⇥ == 右制表符（Tab 键）
+- ⇤ == 左制表符（Shift+Tab）
+- ⎋ == Escape (Esc)
+- ⏏ == 电源开关键
+
 # 触摸板操作
 
 | 手势                 | 效果                 |
@@ -26,16 +49,33 @@
 
 # 快捷键操作
 
-| 快捷键      | 效果 |
-| ----------- | ---- |
-| command + c | 复制 |
-| command + v | 粘贴 |
+| 快捷键             | 效果         |
+| ------------------ | ------------ |
+| command + c        | 复制         |
+| command + v        | 粘贴         |
+| ctrl+command+space | 调出特殊符号 |  |
 
 - 拖拽: 选中文件, 三指移动, 可以拖拽相应文件
-- 切换输入法：`ctrl + space` 或者使用 `caps lock`
+- 切换输入法：`ctrl + space`或者使用 `caps lock`
 - 切换大小写：长按`caps lock`
 - 复制: 复制相当于 Windows 的 复制+粘贴 ，也就是会在原来的位置复制一份
 - 拷贝: 相当于 Windows 的复制，需要手动粘贴
 - 预览: 选中文件, 空格键预览
 
 # 显示
+
+# 应用
+
+## iTerm2
+
+- 横向分屏：ctrl+d
+- 纵向分屏：ctrl+shift+d
+- 各控制台之间跳转：⌘+[ 或者 ⌘+]
+
+## vscode
+
+| 快捷键                  | 效果             |
+| ----------------------- | ---------------- |
+| ctrl + ⌘ + space        | 调出特殊符号选项 |
+| ⌥ + shift + f           | 代码格式化       |
+| ctrl+ ` | 显示/隐藏终端 |
