@@ -55,6 +55,7 @@
 | command + v        | 粘贴         |
 | ctrl+command+space | 调出特殊符号 |
 | ⌘+w                | 关闭窗口     |
+| ctrl+command+f     | app 全屏切换 |
 
 - 拖拽: 选中文件, 三指移动, 可以拖拽相应文件
 - 切换输入法：`ctrl + space`或者使用 `caps lock`
