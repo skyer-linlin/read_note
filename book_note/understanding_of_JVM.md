@@ -1,7 +1,7 @@
 <!--
  * @Author: your name
  * @Date: 2020-07-29 21:37:21
- * @LastEditTime: 2020-08-08 01:18:53
+ * @LastEditTime: 2020-08-08 01:28:11
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \read note\book_note\understanding_of_JVM.md
@@ -115,7 +115,19 @@ G1 收集器追踪每个 Region 里面垃圾堆积的“价值”大小，价值
 
 生成虚拟机当前时刻的线程快照。线程快照就是当前虚拟机内每一条线程正在执行的方法的堆栈的集合，可以用来定位线程死锁、死循环、请求外部资源挂起等。
 
-```plantuml
-Bob -> Alice: hello
-Alice -> Bob: hi
+Regular **Markdown** here.
+
+<div hidden>
 ```
+@startuml firstDiagram
+
+Alice -> Bob: Hello
+Bob -> Alice: Hi!
+		
+@enduml
+```
+</div>
+
+![](firstDiagram.svg)
+
+Some more markdown.
