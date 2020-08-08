@@ -115,8 +115,7 @@ G1 收集器追踪每个 Region 里面垃圾堆积的“价值”大小，价值
 
 生成虚拟机当前时刻的线程快照。线程快照就是当前虚拟机内每一条线程正在执行的方法的堆栈的集合，可以用来定位线程死锁、死循环、请求外部资源挂起等。
 
-```plantuml
-@startuml
+```sequence
 用户 -> 认证中心: 登录操作
 认证中心 -> 缓存: 存放(key=t∏oken+ip,value=token)token
 
@@ -125,5 +124,22 @@ G1 收集器追踪每个 Region 里面垃圾堆积的“价值”大小，价值
 认证中心 <- 缓存: key=token+ip 获取 token
 其他服务 <- 认证中心: 存在且校验成功则跳转到用户请求的其他服务
 其他服务 -> 用户: 信息
-@enduml
 ```
+
+![Alt text](https://g.gravizo.com/svg?
+  digraph G {
+    aize ="4,4";
+    main [shape=box];
+    main -> parse [weight=8];
+    parse -> execute;
+    main -> init [style=dotted];
+    main -> cleanup;
+    execute -> { make_string; printf}
+    init -> make_string;
+    edge [color=red];
+    main -> printf [style=bold,label="100 times"];
+    make_string [label="make a string"];
+    node [shape=box,style=filled,color=".7 .3 1.0"];
+    execute -> compare;
+  }
+)
