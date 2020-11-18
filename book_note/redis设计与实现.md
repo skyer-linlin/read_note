@@ -86,3 +86,94 @@ typedef struct list {
 - 获取某节点的前置后继节点复杂度为 1
 - 获取链表长度的复杂度为 1
 - 多态：用`void*`保存节点值，可以保存各种不同类型的值
+
+## 第四章 字典
+
+### 4.1 字典的实现
+
+#### 4.1.1 哈希表
+
+```c
+typedef struct dictht{
+    // 哈希表数组
+    dictEntry **table;
+
+    // 哈希表大小
+    unsigned long size;
+
+    // 哈希表大小掩码，用于计算索引值，总是等于size-1
+    unsigned long sizemask;
+
+    // 该哈希表已有节点的数量
+    unsigned long used;
+} dictht;
+```
+
+#### 4.1.2 哈希表节点
+
+```c
+typedef struct dictEntry{
+    void *key;
+
+    // 值
+    union{
+        void *val;
+        uint64_t u64;
+        int64_t s64;
+    } v;
+
+    // 指向下个哈希表节点，形成链表
+    struct dictEntry *next;
+}
+```
+
+#### 4.1.3 字典
+
+```c
+typedef struct dict {
+    // 类型特定函数
+    dictType *type;
+
+    // 私有数据
+    void *privadata;
+
+    // 哈希表
+    dictht ht[2];
+
+    // rehash 索引
+    // 如果目前没有在进行rehash，那么它的值为-1
+    int trehashidx;
+} dict;
+```
+
+redis 计算 key 的哈希值使用 MurmurHash 算法，对于有规律的输入依然有很好的随机性。
+
+### 4.3 解决键冲突
+
+使用链地址法解决，因为 dictEntry 没有指向链表尾部的指针，所以为了速度考虑，总是将新节点添加在链表头部（如果要增加到尾部，则必须要遍历一遍链表）。
+
+### 4.4 rehash
+
+操作过程：
+
+1. 为 ht[1]哈希表分配空间，扩展则其大小为 ht[0].used\*2 向上取 2 的幂，收缩则为 ht[0].used 向上取 2 的幂
+2. 将 ht[0]的所有键值对重新计算哈希值放置到 ht[1]的相应位置上
+3. h[0]此时变为空表，释放 ht[0]，将 ht[1]设置为 ht[0]，并在 ht[1]新创建一个空白哈希表
+
+收缩和扩展条件（满足之一即可）：
+
+- 服务器没有在执行 BGSAVE 或者 BGREWRITEAOF 命令，并且哈希表负载因子大于 1
+- 服务器目前正在执行 BGSAVE 或者 BGREWRITEAOF 命令，并且哈希表负载银子大于 5
+- 当哈希表负载因子小于 0.1，执行收缩操作
+
+### 4.5 渐进式 rehash
+
+如果哈希表中键值对过多，一次性从 ht[0]转移到 ht[1]耗费时间过长，可能导致 redis 在一段时间内不能提供服务
+
+过程：
+
+1. 将 dict 中的 rehashidx 属性从-1 改为 0，表示 rehash 过程开始
+2. 开始将 ht[0][rehashidx]的数据从 ht[0]移动到 ht[1]，rehashidx 值加一，继续这一步
+3. 当所有键值对都移动完成后，再次将 rehashidx 的值修改为-1
+
+rehash 期间所有的 urd 操作都会在 ht[0]和 ht[1]上同时进行，新增操作则只在 ht[1]上进行。
