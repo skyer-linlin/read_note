@@ -177,3 +177,196 @@ redis 计算 key 的哈希值使用 MurmurHash 算法，对于有规律的输入
 3. 当所有键值对都移动完成后，再次将 rehashidx 的值修改为-1
 
 rehash 期间所有的 urd 操作都会在 ht[0]和 ht[1]上同时进行，新增操作则只在 ht[1]上进行。
+
+## 第五章 跳跃表
+
+如果一个有序集合包含的元素数量比较多，又或者集合中元素的成员是比较长的字符串时，使用跳跃表做为实现
+
+跳跃表数据结构示例：
+
+<img src="https://i.loli.net/2020/11/21/OBMh34tDfrpuwl1.png" alt="image-20201121175209048" style="zoom: 50%;" />
+
+### 5.1 跳跃表的实现
+
+跳跃表节点
+
+```c
+typedef struct zskiplistNode {
+    // 后退指针
+    struct zskiplistNode *backward;
+
+    // 分值
+    double score;
+
+    //成员对象
+    robj *obj;
+
+    // 层
+    struct zskiplistLevel {
+        // 前进指针
+        struct zskiplistNode *forward;
+
+        // 跨度
+        unsigned int span;
+
+    } level[];
+} zskiplistNode;
+```
+
+跳跃表（头或者哨兵）用来保存跳表信息，具体实现：
+
+```c
+typedef struct zskiplist {
+    struct skiplistNode *header, *tail;
+
+    // 表中节点的数量
+    unsigned long length;
+
+    // 表中层数最大的节点的层数
+    int level;
+} zskiplist;
+```
+
+每个跳表节点的层高都是 1 到 32 的随机数
+
+## 第六章 整数集合
+
+当一个集合只包含整数值元素，兵器额这个集合的元素数量不多时，redis 使用整数集合作为集合键的底层实现。
+
+### 6.1 整数集合的实现
+
+```c
+typedef struct intset {
+    // 编码方式
+    uint32_t encoding;
+    // 集合包含元素的数量
+    uint32_t length;
+    // 保存元素的数组
+    int8_t contents[];
+} intset;
+```
+
+虽然 intset 将 contents 属性声明为 int8_t 类型的数组，但实际上 contents 数组并不保存任何 int8_t 类型的值，数组的真正类型取决于 encoding 属性的值。
+
+### 6.2 升级
+
+当要添加一个新元素到集合，并且元素的类型要比整数集合元素类型长时，整数集合需要先升级。
+
+具体的升级过程是
+
+1. 在原数组的基础上，根据新的元素类型，计算出所需空间，扩展原数组长度
+2. 从尾到头将已存在元素移动到正确的位置上
+3. 将新元素添加
+
+---
+
+升级后新元素的位置：
+
+- 引发升级的新元素如果大于现存所有元素，放在最后一位
+- 如果小于现存所有元素（一个绝对值很大的负数），则放在数组首位
+
+### 6.4 降级
+
+整数集合不支持降级操作
+
+## 第七章 压缩列表
+
+压缩列表是列表键和哈希键的底层实现之一。当一个列表键只包含少量列表项，并且每个列表项要么就是小整数值，要么就是长度比较短的字符串，那么 redis 就会使用压缩列表来做列表键的底层实现。
+
+## 第八章 对象
+
+### 8.1 对象的类型和编码
+
+```c
+typedef struct redisObject {
+    // 类型
+    unsigned typee:4;
+
+    // 编码
+    unsigned encoding:4;
+
+    // 指向底层实现数据结构的指针
+    void *ptr;
+} robj;
+```
+
+redis 数据库保存的键值对来说，键总是一个字符串对象
+
+| 对象所使用底层数据结构 | 对象所使用底层数据结构 |
+| ---------------------- | ---------------------- |
+| 简单动态字符串         | embstr                 |
+| SDS                    | raw                    |
+| 字典                   | hashtable              |
+
+### 8.2 字符串对象
+
+字符串对象编码可以是 int、raw、embstr。
+
+如果字符串对象保存的是一个字符串值，并且字符串值的长度大于 39 字节，那么使用 SDS 保存。
+
+对于小于 39 字节的短字符串，则使用 embstr 保存。
+
+raw 和 embstr 结构类似，区别如下：
+
+- raw 是 redisObject 持有对 sdshdr 的引用
+- embstr 是 sds 的相关属性和 redisObject 保存在一个连续内存块中
+
+![image-20201122213147624](https://i.loli.net/2020/11/22/U3n9QyjcbdhTpwK.png)
+浮点数在 redis 中也是作为字符串保存的。
+
+### 8.3 列表对象
+
+列表对象可以是 ziplist 或者 linkedlist。
+
+选用 ziplist 的条件：
+
+- 列表对象保存的所有字符串元素的长度都小于 64 字节
+- 列表对象保存的元素数量小于 512 个
+
+### 8.4 哈希对象
+
+哈希对象可以是 ziplist 或者 hashtable。
+
+选用 ziplist 的条件：
+
+- 哈希对象保存的说有键值对的键和值的字符串长度都小于 64 字节
+- 哈希对象所保存的键值对数量小于 512 个
+
+### 8.5 集合对象
+
+集合对象的编码可以是 intset 或者 hashtable。
+
+当使用字典作为底层实现时，字典的每个 key 都是字符串对象，字典的值则全部被设置为 null。
+
+使用 intset 的条件：
+
+- 集合对象保存的所有元素都是整数值
+- 集合对象保存的元素总数不超过 512 个
+
+### 8.6 有序集合对象
+
+有序集合的编码可以是 ziplist 或者 skiplist。
+
+skiplist 编码的有序集合对象使用 zset 结构作为底层实现。一个 zset 结构同时包含一个字典和一个跳跃表。
+
+```c
+typedef struct zset {
+    zskiplist *zsl;
+    dict *dict;
+} zset;
+```
+
+![image-20201122232735836](https://i.loli.net/2020/11/22/FQMHaTojYNbAGqk.png)
+
+同时使用两种数据结构分别保存数据是为了结合优点，使用字典可以快速根据集合的 key 获取 score，使用跳表可以快速地对元素进行排序，做范围取值等操作。
+
+使用 ziplist 的条件：
+
+- 有序集合保存的元素数量小于 128 个
+- 有序集合保存的所有元素的长度都小于 64 字节
+
+### 8.10 对象的空转时长
+
+对象会记录自己的最后一次被访问时间，这个时间可以用于计算对象的空转时间。
+
+`object idletime xxx`
